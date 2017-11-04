@@ -31,12 +31,26 @@ from nets.resnet_v1 import resnetv1
 
 import torch
 
-CLASSES = ('__background__',
-           'aeroplane', 'bicycle', 'bird', 'boat',
-           'bottle', 'bus', 'car', 'cat', 'chair',
-           'cow', 'diningtable', 'dog', 'horse',
-           'motorbike', 'person', 'pottedplant',
-           'sheep', 'sofa', 'train', 'tvmonitor')
+# CLASSES = ('__background__',
+#            'aeroplane', 'bicycle', 'bird', 'boat',
+#            'bottle', 'bus', 'car', 'cat', 'chair',
+#            'cow', 'diningtable', 'dog', 'horse',
+#            'motorbike', 'person', 'pottedplant',
+#            'sheep', 'sofa', 'train', 'tvmonitor')
+
+CLASSES = ('__background__', 'person',
+           'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat',
+           'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog',
+           'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack',
+           'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball',
+           'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket', 'bottle', 'wine glass',
+           'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich',
+           'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair',
+           'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse',
+           'remote', 'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator',
+           'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'
+           )
+
 
 NETS = {'vgg16': ('vgg16_faster_rcnn_iter_%d.pth',),'res101': ('res101_faster_rcnn_iter_%d.pth',)}
 DATASETS= {'pascal_voc': ('voc_2007_trainval',),'pascal_voc_0712': ('voc_2007_trainval+voc_2012_trainval',)}
@@ -77,7 +91,8 @@ def demo(net, image_name):
     """Detect object classes in an image using pre-computed object proposals."""
 
     # Load the demo image
-    im_file = os.path.join(cfg.DATA_DIR, 'demo', image_name)
+    # im_file = os.path.join(cfg.DATA_DIR, 'demo', image_name)
+    im_file = image_name
     im = cv2.imread(im_file)
 
     # Detect all object classes and regress object bounds
@@ -88,8 +103,19 @@ def demo(net, image_name):
     print('Detection took {:.3f}s for {:d} object proposals'.format(timer.total_time(), boxes.shape[0]))
 
     # Visualize detections for each class
-    CONF_THRESH = 0.8
+    CONF_THRESH = 0.5
     NMS_THRESH = 0.3
+
+    # cls_ind = 1
+    # cls_boxes = boxes[:, 4 * cls_ind:4 * (cls_ind + 1)]
+    # cls_scores = scores[:, cls_ind]
+    # dets = np.hstack((cls_boxes,
+    #                   cls_scores[:, np.newaxis])).astype(np.float32)
+    # keep = nms(torch.from_numpy(dets), NMS_THRESH)
+    # dets = dets[keep.numpy(), :]
+    #
+    # return dets
+
     for cls_ind, cls in enumerate(CLASSES[1:]):
         cls_ind += 1 # because we skipped background
         cls_boxes = boxes[:, 4*cls_ind:4*(cls_ind + 1)]
@@ -118,8 +144,11 @@ if __name__ == '__main__':
     # model path
     demonet = args.demo_net
     dataset = args.dataset
-    saved_model = os.path.join('output', demonet, DATASETS[dataset][0], 'default',
-                              NETS[demonet][0] %(70000 if dataset == 'pascal_voc' else 110000))
+    # saved_model = os.path.join('output', demonet, DATASETS[dataset][0], 'default',
+    #                           NETS[demonet][0] %(70000 if dataset == 'pascal_voc' else 110000))
+    # saved_model = '/extra/models/routianluo/voc_0712_80k-110k.tar'
+    saved_model = '/extra/models/routianluo/res101_faster_rcnn_iter_1190000.pth'
+    im_root = '/data/2DMOT2015/demo/Demo2/img1'
 
 
     if not os.path.isfile(saved_model):
@@ -133,8 +162,8 @@ if __name__ == '__main__':
         net = resnetv1(num_layers=101)
     else:
         raise NotImplementedError
-    net.create_architecture(21,
-                          tag='default', anchor_scales=[8, 16, 32])
+    net.create_architecture(81,
+                          tag='default', anchor_scales=[4,8,16,32])
 
     net.load_state_dict(torch.load(saved_model))
 
@@ -143,11 +172,24 @@ if __name__ == '__main__':
 
     print('Loaded network {:s}'.format(saved_model))
 
-    im_names = ['000456.jpg', '000542.jpg', '001150.jpg',
-                '001763.jpg', '004545.jpg']
+    im_names = sorted(os.listdir(im_root))[520:527]
     for im_name in im_names:
+        im_file = os.path.join(im_root, im_name)
         print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
         print('Demo for data/demo/{}'.format(im_name))
-        demo(net, im_name)
-
+        demo(net, im_file)
     plt.show()
+    #
+    # im_names = sorted(os.listdir(im_root))
+    # with open('/data/2DMOT2015/demo/Demo2/det.txt', 'w') as f:
+    #     for i, im_name in enumerate(im_names):
+    #         im_file = os.path.join(im_root, im_name)
+    #         print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+    #         print('Demo for data/demo/{}'.format(im_name))
+    #         dets = demo(net, im_file)
+    #         dets = dets[dets[:, 4] > 0.5]
+    #
+    #         frame = i + 1
+    #         for det in dets:
+    #             f.write('{},-1,{},{},{},{},{},-1,-1,-1\n'.format(frame, det[0], det[1], det[2], det[3], det[4]))
+    #
