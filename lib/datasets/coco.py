@@ -36,11 +36,13 @@ class coco(imdb):
     self._data_path = osp.join(cfg.DATA_DIR, 'coco')
     # load COCO API, classes, class <-> id mappings
     self._COCO = COCO(self._get_ann_file())
-    cats = self._COCO.loadCats(self._COCO.getCatIds())
+    # cats = self._COCO.loadCats(self._COCO.getCatIds())
+    self.catIds = self._COCO.getCatIds(catNms='person')
+    cats = self._COCO.loadCats(self.catIds)
     self._classes = tuple(['__background__'] + [c['name'] for c in cats])
+    print(self._classes)
     self._class_to_ind = dict(list(zip(self.classes, list(range(self.num_classes)))))
-    self._class_to_coco_cat_id = dict(list(zip([c['name'] for c in cats],
-                                               self._COCO.getCatIds())))
+    self._class_to_coco_cat_id = dict(list(zip([c['name'] for c in cats], self.catIds)))
     self._image_index = self._load_image_set_index()
     # Default to roidb handler
     self.set_proposal_method('gt')
@@ -72,7 +74,7 @@ class coco(imdb):
     """
     Load image ids.
     """
-    image_ids = self._COCO.getImgIds()
+    image_ids = self._COCO.getImgIds(catIds=self.catIds)
     return image_ids
 
   def _get_widths(self):
@@ -130,7 +132,7 @@ class coco(imdb):
     width = im_ann['width']
     height = im_ann['height']
 
-    annIds = self._COCO.getAnnIds(imgIds=index, iscrowd=None)
+    annIds = self._COCO.getAnnIds(imgIds=index, catIds=self.catIds, iscrowd=None)
     objs = self._COCO.loadAnns(annIds)
     # Sanitize bboxes -- some are invalid
     valid_objs = []
