@@ -38,18 +38,21 @@ import torch
 #            'motorbike', 'person', 'pottedplant',
 #            'sheep', 'sofa', 'train', 'tvmonitor')
 
-CLASSES = ('__background__', 'person',
-           'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat',
-           'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog',
-           'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack',
-           'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball',
-           'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket', 'bottle', 'wine glass',
-           'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich',
-           'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair',
-           'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse',
-           'remote', 'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator',
-           'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'
-           )
+# CLASSES = ('__background__', 'person',
+#            'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat',
+#            'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog',
+#            'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack',
+#            'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball',
+#            'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket', 'bottle', 'wine glass',
+#            'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich',
+#            'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair',
+#            'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse',
+#            'remote', 'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator',
+#            'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'
+#            )
+
+
+CLASSES = ('__background__', 'person',)
 
 
 NETS = {'vgg16': ('vgg16_faster_rcnn_iter_%d.pth',),'res101': ('res101_faster_rcnn_iter_%d.pth',)}
@@ -103,7 +106,7 @@ def demo(net, image_name):
     print('Detection took {:.3f}s for {:d} object proposals'.format(timer.total_time(), boxes.shape[0]))
 
     # Visualize detections for each class
-    CONF_THRESH = 0.5
+    CONF_THRESH = 0.85
     NMS_THRESH = 0.3
 
     # cls_ind = 1
@@ -130,7 +133,7 @@ def parse_args():
     """Parse input arguments."""
     parser = argparse.ArgumentParser(description='Tensorflow Faster R-CNN demo')
     parser.add_argument('--net', dest='demo_net', help='Network to use [vgg16 res101]',
-                        choices=NETS.keys(), default='res101')
+                        choices=NETS.keys(), default='res50')
     parser.add_argument('--dataset', dest='dataset', help='Trained dataset [pascal_voc pascal_voc_0712]',
                         choices=DATASETS.keys(), default='pascal_voc_0712')
     args = parser.parse_args()
@@ -147,8 +150,10 @@ if __name__ == '__main__':
     # saved_model = os.path.join('output', demonet, DATASETS[dataset][0], 'default',
     #                           NETS[demonet][0] %(70000 if dataset == 'pascal_voc' else 110000))
     # saved_model = '/extra/models/routianluo/voc_0712_80k-110k.tar'
-    saved_model = '/extra/models/routianluo/res101_faster_rcnn_iter_1190000.pth'
-    im_root = '/data/2DMOT2015/demo/Demo2/img1'
+    # saved_model = '/extra/models/routianluo/res101_faster_rcnn_iter_1190000.pth'
+    saved_model = '/data/models/routianluo/longc/res50_faster_rcnn_iter_335000.pth'
+    # im_root = '/data/2DMOT2015/demo/Demo2/img1'
+    im_root = '/data/Syncs/Walmart/images/'
 
 
     if not os.path.isfile(saved_model):
@@ -160,9 +165,13 @@ if __name__ == '__main__':
         net = vgg16()
     elif demonet == 'res101':
         net = resnetv1(num_layers=101)
+    elif demonet == 'res50':
+        net = resnetv1(num_layers=50)
     else:
         raise NotImplementedError
-    net.create_architecture(81,
+    # net.create_architecture(81,
+    #                       tag='default', anchor_scales=[4,8,16,32])
+    net.create_architecture(2,
                           tag='default', anchor_scales=[4,8,16,32])
 
     net.load_state_dict(torch.load(saved_model))
@@ -172,7 +181,7 @@ if __name__ == '__main__':
 
     print('Loaded network {:s}'.format(saved_model))
 
-    im_names = sorted(os.listdir(im_root))[520:527]
+    im_names = sorted(os.listdir(im_root))[0:10]
     for im_name in im_names:
         im_file = os.path.join(im_root, im_name)
         print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
