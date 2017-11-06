@@ -137,6 +137,9 @@ class coco(imdb):
     # Sanitize bboxes -- some are invalid
     valid_objs = []
     for obj in objs:
+      iscrowd = obj['iscrowd']
+      if iscrowd:
+        continue
       x1 = np.max((0, obj['bbox'][0]))
       y1 = np.max((0, obj['bbox'][1]))
       x2 = np.min((width - 1, x1 + np.max((0, obj['bbox'][2] - 1))))

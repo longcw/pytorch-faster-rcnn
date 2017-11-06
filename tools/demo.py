@@ -151,7 +151,8 @@ if __name__ == '__main__':
     #                           NETS[demonet][0] %(70000 if dataset == 'pascal_voc' else 110000))
     # saved_model = '/extra/models/routianluo/voc_0712_80k-110k.tar'
     # saved_model = '/extra/models/routianluo/res101_faster_rcnn_iter_1190000.pth'
-    saved_model = '/data/models/routianluo/longc/res50_faster_rcnn_iter_335000.pth'
+    # saved_model = '/data/models/routianluo/longc/res50_faster_rcnn_iter_335000.pth'
+    saved_model = '/data/models/routianluo/longc/res50_person_faster_rcnn_iter_100000.pth'
     # im_root = '/data/2DMOT2015/demo/Demo2/img1'
     im_root = '/data/Syncs/Walmart/images/'
 
@@ -171,8 +172,10 @@ if __name__ == '__main__':
         raise NotImplementedError
     # net.create_architecture(81,
     #                       tag='default', anchor_scales=[4,8,16,32])
+    # net.create_architecture(2,
+    #                       tag='default', anchor_scales=[4,8,16,32])
     net.create_architecture(2,
-                          tag='default', anchor_scales=[4,8,16,32])
+                          tag='default', anchor_scales=[4,8,16], anchor_ratios=(1, 2, 3))
 
     net.load_state_dict(torch.load(saved_model))
 

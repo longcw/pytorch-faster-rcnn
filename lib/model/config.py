@@ -157,7 +157,7 @@ __C.TRAIN.RPN_POSITIVE_WEIGHT = -1.0
 
 # Whether to use all ground truth bounding boxes for training, 
 # For COCO, setting USE_ALL_GT to False will exclude boxes that are flagged as ''iscrowd''
-__C.TRAIN.USE_ALL_GT = True
+__C.TRAIN.USE_ALL_GT = False
 
 #
 # Testing options
