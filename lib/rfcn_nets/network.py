@@ -172,6 +172,8 @@ class Network(nn.Module):
                                             rpn_bbox_outside_weights, sigma=sigma_rpn, dim=[1, 2, 3])
 
         # RCNN, class loss
+        # print(self._predictions["cls_score"].size(), self._proposal_targets["labels"].size())
+        # print(self._predictions["bbox_pred"].size(), self._proposal_targets["bbox_targets"].size())
         cls_score = self._predictions["cls_score"]
         label = self._proposal_targets["labels"].view(-1)
         cross_entropy = F.cross_entropy(cls_score.view(-1, self._num_classes), label)
@@ -245,11 +247,14 @@ class Network(nn.Module):
         rfcn_bbox_map = self.rfcn_bbox_net(feature)
 
         n_rois = rois.size(0)
-        cls_score = self.rfcn_score_pool(rfcn_score_map, rois).view(n_rois, -1)
+        cls_score = self.rfcn_score_pool(rfcn_score_map, rois)
+        cls_score = F.avg_pool2d(cls_score, cls_score.size()[2:4]).view(n_rois, -1)
+
         cls_pred = torch.max(cls_score, 1)[1]
         cls_prob = F.softmax(cls_score)
 
-        bbox_pred = self.rfcn_bbox_pool(rfcn_bbox_map, rois).view(n_rois, -1)
+        bbox_pred = self.rfcn_bbox_pool(rfcn_bbox_map, rois)
+        bbox_pred = F.avg_pool2d(bbox_pred, bbox_pred.size()[2:4]).view(n_rois, -1)
 
         self._predictions["cls_score"] = cls_score
         self._predictions["cls_pred"] = cls_pred
@@ -297,8 +302,9 @@ class Network(nn.Module):
 
         pool_size = cfg.POOLING_SIZE
 
-        self.rfcn_score_net = nn.Conv2d(self._rfcn_channels, pool_size * pool_size * self._num_classes * 4, 1, 1)
-        self.rfcn_bbox_net = nn.Conv2d(self._rfcn_channels, pool_size * pool_size * self._num_classes, 1, 1)
+        self.rfcn_score_net = nn.Conv2d(self._net_conv_channels, pool_size * pool_size * self._num_classes * 4, 1, 1)
+        self.rfcn_bbox_net = nn.Conv2d(self._net_conv_channels, pool_size * pool_size * self._num_classes, 1, 1)
+        self.rfcn_bbox_net = nn.Conv2d(self._net_conv_channels, pool_size * pool_size * self._num_classes, 1, 1)
 
         self.rfcn_score_pool = PSRoIPool(pool_size, pool_size, 1. / 16, pool_size, self._num_classes)
         self.rfcn_bbox_pool = PSRoIPool(pool_size, pool_size, 1. / 16, pool_size, self._num_classes * 4)

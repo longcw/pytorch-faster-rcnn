@@ -66,7 +66,7 @@ def vis_detections_cv2(im, class_name, dets, thresh=0.5):
     for i in inds:
         bbox = dets[i, :4].astype(np.int)
         score = dets[i, -1]
-        thick = int(sum(im.shape[0:2]) / 600.)
+        thick = int(max(sum(im.shape[0:2]) / 600., 2))
         cv2.rectangle(im, (bbox[0], bbox[1]), (bbox[2], bbox[3]), color=(0, 0, 255), thickness=thick)
         # cv2.putText(im, '{:s} {:.3f}'.format(class_name, score), (bbox[0], bbox[1] - 2), 0, 1, (255, 0, 0), thickness=2)
         cv2.putText(im, '{:.3f}'.format(score), (bbox[0], bbox[1] - 2), 0,  1e-3 * im.shape[0], (255, 0, 0), thickness=thick//3)
@@ -77,7 +77,8 @@ def vis_detections_cv2(im, class_name, dets, thresh=0.5):
         im = cv2.resize(im, None, fx=scale, fy=scale)
 
     cv2.imshow('test', im)
-    cv2.waitKey(0)
+    cv2.waitKey(1)
+    return im
 
 
 def vis_detections(im, class_name, dets, thresh=0.5):
@@ -129,7 +130,7 @@ def demo(net, image_name):
     print('Detection took {:.3f}s for {:d} object proposals'.format(timer.total_time(), boxes.shape[0]))
 
     # Visualize detections for each class
-    CONF_THRESH = 0.8
+    CONF_THRESH = 0.7
     NMS_THRESH = 0.3
 
     # cls_ind = 1
@@ -150,7 +151,9 @@ def demo(net, image_name):
                           cls_scores[:, np.newaxis])).astype(np.float32)
         keep = nms(torch.from_numpy(dets), NMS_THRESH)
         dets = dets[keep.numpy(), :]
-        vis_detections_cv2(im, cls, dets, thresh=CONF_THRESH)
+        im = vis_detections_cv2(im, cls, dets, thresh=CONF_THRESH)
+    return im
+
 
 def parse_args():
     """Parse input arguments."""
@@ -175,10 +178,10 @@ if __name__ == '__main__':
     # saved_model = '/extra/models/routianluo/voc_0712_80k-110k.tar'
     # saved_model = '/extra/models/routianluo/res101_faster_rcnn_iter_1190000.pth'
     # saved_model = '/data/models/routianluo/longc/res50_faster_rcnn_iter_335000.pth'
-    saved_model = '/extra/models/routianluo/longc/res50_person2_faster_rcnn_iter_65000.pth'
+    saved_model = '/extra/models/routianluo/longc/res50_person2_faster_rcnn_iter_105000.pth'
     # im_root = '/data/2DMOT2015/demo/Demo2/img1'
-    # im_root = '/extra/Syncs/Walmart/images/'
-    im_root = '/extra/Syncs/Walmart/demo'
+    im_root = '/extra/Syncs/Walmart/images/'
+    # im_root = '/extra/Syncs/Walmart/demo'
 
 
     if not os.path.isfile(saved_model):
@@ -214,8 +217,9 @@ if __name__ == '__main__':
         im_file = os.path.join(im_root, im_name)
         print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
         print('Demo for data/demo/{}'.format(im_name))
-        demo(net, im_file)
-    plt.show()
+        im = demo(net, im_file)
+
+        cv2.imwrite(os.path.join('/extra/Syncs/Walmart/results', im_name), im)
     #
     # im_names = sorted(os.listdir(im_root))
     # with open('/data/2DMOT2015/demo/Demo2/det.txt', 'w') as f:

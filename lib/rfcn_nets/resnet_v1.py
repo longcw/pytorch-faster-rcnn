@@ -7,7 +7,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from nets.network import Network
+from rfcn_nets.network import Network
 from model.config import cfg
 
 import utils.timer
@@ -212,7 +212,7 @@ class resnetv1(Network):
         self._feat_compress = [1. / float(self._feat_stride[0]), ]
         self._num_layers = num_layers
         self._net_conv_channels = 1024
-        self._fc7_channels = 2048
+        # self._fc7_channels = 2048
 
     def _crop_pool_layer(self, bottom, rois):
         return Network._crop_pool_layer(self, bottom, rois, cfg.RESNET.MAX_POOL)
