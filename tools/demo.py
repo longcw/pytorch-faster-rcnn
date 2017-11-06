@@ -58,6 +58,28 @@ CLASSES = ('__background__', 'person',)
 NETS = {'vgg16': ('vgg16_faster_rcnn_iter_%d.pth',),'res101': ('res101_faster_rcnn_iter_%d.pth',)}
 DATASETS= {'pascal_voc': ('voc_2007_trainval',),'pascal_voc_0712': ('voc_2007_trainval+voc_2012_trainval',)}
 
+
+def vis_detections_cv2(im, class_name, dets, thresh=0.5):
+    """Draw detected bounding boxes."""
+    inds = np.where(dets[:, -1] >= thresh)[0]
+
+    for i in inds:
+        bbox = dets[i, :4].astype(np.int)
+        score = dets[i, -1]
+        thick = int(sum(im.shape[0:2]) / 600.)
+        cv2.rectangle(im, (bbox[0], bbox[1]), (bbox[2], bbox[3]), color=(0, 0, 255), thickness=thick)
+        # cv2.putText(im, '{:s} {:.3f}'.format(class_name, score), (bbox[0], bbox[1] - 2), 0, 1, (255, 0, 0), thickness=2)
+        cv2.putText(im, '{:.3f}'.format(score), (bbox[0], bbox[1] - 2), 0,  1e-3 * im.shape[0], (255, 0, 0), thickness=thick//3)
+
+    max_size = 1000
+    if max(im.shape[:2]) > max_size:
+        scale = float(max_size) / max(im.shape[:2])
+        im = cv2.resize(im, None, fx=scale, fy=scale)
+
+    cv2.imshow('test', im)
+    cv2.waitKey(0)
+
+
 def vis_detections(im, class_name, dets, thresh=0.5):
     """Draw detected bounding boxes."""
     inds = np.where(dets[:, -1] >= thresh)[0]
@@ -90,6 +112,7 @@ def vis_detections(im, class_name, dets, thresh=0.5):
     plt.tight_layout()
     plt.draw()
 
+
 def demo(net, image_name):
     """Detect object classes in an image using pre-computed object proposals."""
 
@@ -106,7 +129,7 @@ def demo(net, image_name):
     print('Detection took {:.3f}s for {:d} object proposals'.format(timer.total_time(), boxes.shape[0]))
 
     # Visualize detections for each class
-    CONF_THRESH = 0.85
+    CONF_THRESH = 0.8
     NMS_THRESH = 0.3
 
     # cls_ind = 1
@@ -127,7 +150,7 @@ def demo(net, image_name):
                           cls_scores[:, np.newaxis])).astype(np.float32)
         keep = nms(torch.from_numpy(dets), NMS_THRESH)
         dets = dets[keep.numpy(), :]
-        vis_detections(im, cls, dets, thresh=CONF_THRESH)
+        vis_detections_cv2(im, cls, dets, thresh=CONF_THRESH)
 
 def parse_args():
     """Parse input arguments."""
@@ -152,9 +175,10 @@ if __name__ == '__main__':
     # saved_model = '/extra/models/routianluo/voc_0712_80k-110k.tar'
     # saved_model = '/extra/models/routianluo/res101_faster_rcnn_iter_1190000.pth'
     # saved_model = '/data/models/routianluo/longc/res50_faster_rcnn_iter_335000.pth'
-    saved_model = '/data/models/routianluo/longc/res50_person_faster_rcnn_iter_100000.pth'
+    saved_model = '/extra/models/routianluo/longc/res50_person2_faster_rcnn_iter_65000.pth'
     # im_root = '/data/2DMOT2015/demo/Demo2/img1'
-    im_root = '/data/Syncs/Walmart/images/'
+    # im_root = '/extra/Syncs/Walmart/images/'
+    im_root = '/extra/Syncs/Walmart/demo'
 
 
     if not os.path.isfile(saved_model):
@@ -184,7 +208,8 @@ if __name__ == '__main__':
 
     print('Loaded network {:s}'.format(saved_model))
 
-    im_names = sorted(os.listdir(im_root))[0:10]
+    im_names = sorted(os.listdir(im_root))
+    # im_names = sorted(os.listdir(im_root))[520:527]
     for im_name in im_names:
         im_file = os.path.join(im_root, im_name)
         print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
