@@ -28,6 +28,7 @@ import argparse
 
 from nets.vgg16 import vgg16
 from nets.resnet_v1 import resnetv1
+from nets.pvanet import pvanet
 
 import torch
 
@@ -76,8 +77,6 @@ def vis_detections_cv2(im, class_name, dets, thresh=0.5):
         scale = float(max_size) / max(im.shape[:2])
         im = cv2.resize(im, None, fx=scale, fy=scale)
 
-    cv2.imshow('test', im)
-    cv2.waitKey(1)
     return im
 
 
@@ -130,7 +129,7 @@ def demo(net, image_name):
     print('Detection took {:.3f}s for {:d} object proposals'.format(timer.total_time(), boxes.shape[0]))
 
     # Visualize detections for each class
-    CONF_THRESH = 0.7
+    CONF_THRESH = 0.2
     NMS_THRESH = 0.3
 
     # cls_ind = 1
@@ -159,7 +158,7 @@ def parse_args():
     """Parse input arguments."""
     parser = argparse.ArgumentParser(description='Tensorflow Faster R-CNN demo')
     parser.add_argument('--net', dest='demo_net', help='Network to use [vgg16 res101]',
-                        choices=NETS.keys(), default='res50')
+                        choices=NETS.keys(), default='pvanet')
     parser.add_argument('--dataset', dest='dataset', help='Trained dataset [pascal_voc pascal_voc_0712]',
                         choices=DATASETS.keys(), default='pascal_voc_0712')
     args = parser.parse_args()
@@ -178,7 +177,8 @@ if __name__ == '__main__':
     # saved_model = '/extra/models/routianluo/voc_0712_80k-110k.tar'
     # saved_model = '/extra/models/routianluo/res101_faster_rcnn_iter_1190000.pth'
     # saved_model = '/data/models/routianluo/longc/res50_faster_rcnn_iter_335000.pth'
-    saved_model = '/extra/models/routianluo/longc/res50_person2_faster_rcnn_iter_105000.pth'
+    # saved_model = '/extra/models/routianluo/longc/res50_person2_faster_rcnn_iter_290000.pth'
+    saved_model = '/extra/models/routianluo/longc/pvanet_faster_rcnn_iter_10000.pth'
     # im_root = '/data/2DMOT2015/demo/Demo2/img1'
     im_root = '/extra/Syncs/Walmart/images/'
     # im_root = '/extra/Syncs/Walmart/demo'
@@ -195,6 +195,8 @@ if __name__ == '__main__':
         net = resnetv1(num_layers=101)
     elif demonet == 'res50':
         net = resnetv1(num_layers=50)
+    elif demonet == 'pvanet':
+        net = pvanet()
     else:
         raise NotImplementedError
     # net.create_architecture(81,
@@ -219,7 +221,10 @@ if __name__ == '__main__':
         print('Demo for data/demo/{}'.format(im_name))
         im = demo(net, im_file)
 
-        cv2.imwrite(os.path.join('/extra/Syncs/Walmart/results', im_name), im)
+        # cv2.imwrite(os.path.join('/extra/Syncs/Walmart/results', im_name), im)
+
+        cv2.imshow('test', im)
+        cv2.waitKey(0)
     #
     # im_names = sorted(os.listdir(im_root))
     # with open('/data/2DMOT2015/demo/Demo2/det.txt', 'w') as f:

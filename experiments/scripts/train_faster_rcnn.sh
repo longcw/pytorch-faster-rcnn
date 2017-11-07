@@ -80,7 +80,7 @@ if [ ! -f ${NET_FINAL}.index ]; then
       TRAIN.STEPSIZE ${STEPSIZE} ${EXTRA_ARGS}
   else
     CUDA_VISIBLE_DEVICES=${GPU_ID} time python ./tools/trainval_net.py \
-      --weight data/imagenet_weights/${NET}.pth \
+      --weight data/imagenet_weights/${NET} \
       --imdb ${TRAIN_IMDB} \
       --imdbval ${TEST_IMDB} \
       --iters ${ITERS} \

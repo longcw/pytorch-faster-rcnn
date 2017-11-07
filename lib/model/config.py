@@ -242,6 +242,26 @@ __C.MOBILENET.WEIGHT_DECAY = 0.00004
 # Depth multiplier
 __C.MOBILENET.DEPTH_MULTIPLIER = 1.
 
+
+#
+# PVANet options
+#
+__C.PVANET = edict()
+
+# Whether to regularize the depth-wise filters during training
+__C.PVANET.REGU_DEPTH = False
+
+# Number of fixed layers during training, by default the bottom 5 of 14 layers is fixed
+# Range: 0 (none) to 12 (all)
+__C.PVANET.FIXED_BLOCKS = 2
+
+# Weight decay for the mobilenet weights
+__C.PVANET.WEIGHT_DECAY = 0.00004
+
+# Depth multiplier
+__C.PVANET.DEPTH_MULTIPLIER = 1.
+
+
 #
 # MISC
 #

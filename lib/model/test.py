@@ -25,6 +25,32 @@ from model.bbox_transform import clip_boxes, bbox_transform_inv
 
 import torch
 
+
+def _factor_closest(num, factor, is_ceil=True):
+    """Returns the closest integer to `num` that is divisible by `factor`
+
+    Actually, that's a lie. By default, we return the closest factor _greater_
+    than the input. If, however, you set `it_ceil` to `False`, we return the
+    closest factor _less_ than the input.
+    """
+    num = float(num) / factor
+    num = np.ceil(num) if is_ceil else np.floor(num)
+    return int(num) * factor
+
+
+def pad_to_factor(im, factor=32):
+    # Compute the padded image shape. Ensure it's divisible by factor.
+    h, w = im.shape[:2]
+    new_h, new_w = _factor_closest(h, factor), _factor_closest(w, factor)
+    new_shape = [new_h, new_w] if im.ndim < 3 else [new_h, new_w, im.shape[-1]]
+
+    # Pad the image.
+    im_padded = np.full(new_shape, fill_value=0, dtype=im.dtype)
+    im_padded[0:h, 0:w] = im
+
+    return im_padded
+
+
 def _get_image_blob(im):
   """Converts an image into a network input.
   Arguments:
@@ -51,6 +77,7 @@ def _get_image_blob(im):
       im_scale = float(cfg.TEST.MAX_SIZE) / float(im_size_max)
     im = cv2.resize(im_orig, None, None, fx=im_scale, fy=im_scale,
             interpolation=cv2.INTER_LINEAR)
+    im = pad_to_factor(im, 32)
     im_scale_factors.append(im_scale)
     processed_ims.append(im)
 

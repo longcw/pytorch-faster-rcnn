@@ -20,6 +20,7 @@ import sys
 from nets.vgg16 import vgg16
 from nets.resnet_v1 import resnetv1
 from nets.mobilenet_v1 import mobilenetv1
+from nets.pvanet import pvanet
 
 from rfcn_nets.resnet_v1 import resnetv1 as resnetv1_rfcn
 
@@ -123,6 +124,7 @@ if __name__ == '__main__':
     cfg.TRAIN.USE_FLIPPED = orgflip
 
     # load network
+    weight_file = args.weight + '.pth'
     if args.net == 'vgg16':
         net = vgg16()
     elif args.net == 'res50':
@@ -136,9 +138,12 @@ if __name__ == '__main__':
     elif args.net == 'res50_rfcn':
         print('rfcn-----')
         net = resnetv1_rfcn(num_layers=50)
+    elif args.net == 'pvanet':
+        weight_file = args.weight + '.h5'
+        net = pvanet()
     else:
         raise NotImplementedError
 
     train_net(net, imdb, roidb, valroidb, output_dir, tb_dir,
-              pretrained_model=args.weight,
+              pretrained_model=weight_file,
               max_iters=args.max_iters)
