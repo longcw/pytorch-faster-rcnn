@@ -256,7 +256,7 @@ __C.PVANET.REGU_DEPTH = False
 __C.PVANET.FIXED_BLOCKS = 2
 
 # Weight decay for the mobilenet weights
-__C.PVANET.WEIGHT_DECAY = 0.00004
+__C.PVANET.WEIGHT_DECAY = 0.00001
 
 # Depth multiplier
 __C.PVANET.DEPTH_MULTIPLIER = 1.

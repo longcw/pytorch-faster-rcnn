@@ -113,7 +113,7 @@ def vis_detections(im, class_name, dets, thresh=0.5):
     plt.draw()
 
 
-def demo(net, image_name):
+def demo(net, image_name, conf_threshold):
     """Detect object classes in an image using pre-computed object proposals."""
 
     # Load the demo image
@@ -129,7 +129,7 @@ def demo(net, image_name):
     print('Detection took {:.3f}s for {:d} object proposals'.format(timer.total_time(), boxes.shape[0]))
 
     # Visualize detections for each class
-    CONF_THRESH = 0.2
+    CONF_THRESH = conf_threshold
     NMS_THRESH = 0.3
 
     # cls_ind = 1
@@ -142,6 +142,7 @@ def demo(net, image_name):
     #
     # return dets
 
+    person_detection = None
     for cls_ind, cls in enumerate(CLASSES[1:]):
         cls_ind += 1 # because we skipped background
         cls_boxes = boxes[:, 4*cls_ind:4*(cls_ind + 1)]
@@ -151,19 +152,26 @@ def demo(net, image_name):
         keep = nms(torch.from_numpy(dets), NMS_THRESH)
         dets = dets[keep.numpy(), :]
         im = vis_detections_cv2(im, cls, dets, thresh=CONF_THRESH)
-    return im
+        if CLASSES[cls_ind] == 'person':
+            person_detection = dets
+    return im, person_detection
 
 
 def parse_args():
     """Parse input arguments."""
     parser = argparse.ArgumentParser(description='Tensorflow Faster R-CNN demo')
     parser.add_argument('--net', dest='demo_net', help='Network to use [vgg16 res101]',
-                        choices=NETS.keys(), default='pvanet')
+                        choices=NETS.keys(), default='res50')
     parser.add_argument('--dataset', dest='dataset', help='Trained dataset [pascal_voc pascal_voc_0712]',
                         choices=DATASETS.keys(), default='pascal_voc_0712')
     args = parser.parse_args()
 
     return args
+
+
+def mkdirs(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
 
 if __name__ == '__main__':
     cfg.TEST.HAS_RPN = True  # Use RPN for proposals
@@ -177,12 +185,11 @@ if __name__ == '__main__':
     # saved_model = '/extra/models/routianluo/voc_0712_80k-110k.tar'
     # saved_model = '/extra/models/routianluo/res101_faster_rcnn_iter_1190000.pth'
     # saved_model = '/data/models/routianluo/longc/res50_faster_rcnn_iter_335000.pth'
-    # saved_model = '/extra/models/routianluo/longc/res50_person2_faster_rcnn_iter_290000.pth'
-    saved_model = '/extra/models/routianluo/longc/pvanet_faster_rcnn_iter_10000.pth'
+    saved_model = '/extra/models/routianluo/longc/res50_person2_faster_rcnn_iter_490000.pth'
+    # saved_model = '/extra/models/routianluo/longc/pvanet_faster_rcnn_iter_485000.pth'
     # im_root = '/data/2DMOT2015/demo/Demo2/img1'
-    im_root = '/extra/Syncs/Walmart/images/'
+    # im_root = '/extra/Syncs/Walmart/images/'
     # im_root = '/extra/Syncs/Walmart/demo'
-
 
     if not os.path.isfile(saved_model):
         raise IOError(('{:s} not found.\nDid you download the proper networks from '
@@ -213,29 +220,50 @@ if __name__ == '__main__':
 
     print('Loaded network {:s}'.format(saved_model))
 
-    im_names = sorted(os.listdir(im_root))
-    # im_names = sorted(os.listdir(im_root))[520:527]
-    for im_name in im_names:
-        im_file = os.path.join(im_root, im_name)
-        print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-        print('Demo for data/demo/{}'.format(im_name))
-        im = demo(net, im_file)
 
-        # cv2.imwrite(os.path.join('/extra/Syncs/Walmart/results', im_name), im)
+    def run_detection(im_root, result_root, conf_threshold):
+        print('detection in {}'.format(im_root))
+        im_names = sorted(os.listdir(im_root))
+        # im_names = sorted(os.listdir(im_root))[520:527]
+        for i, im_name in enumerate(im_names):
+            im_file = os.path.join(im_root, im_name)
+            print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+            print('Demo for data/demo/{}'.format(im_name))
+            im, dets = demo(net, im_file, conf_threshold)
+            dets = dets[dets[:, 4] > conf_threshold]
 
-        cv2.imshow('test', im)
-        cv2.waitKey(0)
-    #
-    # im_names = sorted(os.listdir(im_root))
-    # with open('/data/2DMOT2015/demo/Demo2/det.txt', 'w') as f:
-    #     for i, im_name in enumerate(im_names):
-    #         im_file = os.path.join(im_root, im_name)
-    #         print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-    #         print('Demo for data/demo/{}'.format(im_name))
-    #         dets = demo(net, im_file)
-    #         dets = dets[dets[:, 4] > 0.5]
-    #
-    #         frame = i + 1
-    #         for det in dets:
-    #             f.write('{},-1,{},{},{},{},{},-1,-1,-1\n'.format(frame, det[0], det[1], det[2], det[3], det[4]))
-    #
+            # cv2.imwrite(os.path.join('/extra/Syncs/Walmart/results', im_name), im)
+            with open(os.path.join(result_root, '{:04d}.txt'.format(i)), 'w') as f:
+                f.write('{}\n'.format(len(dets)))
+                for det in dets:
+                    x1, y1, x2, y2, s = det
+                    w = x2 - x1
+                    h = y2 - y1
+                    f.write('0 {} {} {} {} {}\n'.format(s, w, h, x1, y1))
+
+            cv2.imshow('test', im)
+            cv2.waitKey(1)
+        #
+        # im_names = sorted(os.listdir(im_root))
+        # with open('/data/2DMOT2015/demo/Demo2/det.txt', 'w') as f:
+        #     for i, im_name in enumerate(im_names):
+        #         im_file = os.path.join(im_root, im_name)
+        #         print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+        #         print('Demo for data/demo/{}'.format(im_name))
+        #         dets = demo(net, im_file)
+        #         dets = dets[dets[:, 4] > 0.5]
+        #
+        #         frame = i + 1
+        #         for det in dets:
+        #             f.write('{},-1,{},{},{},{},{},-1,-1,-1\n'.format(frame, det[0], det[1], det[2], det[3], det[4]))
+        #
+
+    im_root = '/home/longc/PycharmProjects/mcmtt/data/PETS2009.S2.L1/'
+    result_root = '/home/longc/PycharmProjects/mcmtt/data/PETS2009.S2.L1/faster_rcnn_detection/'
+    conf_threshold = 0.7
+
+    for sub_view in os.listdir(im_root):
+        if sub_view.startswith('View_'):
+            dst_root = os.path.join(result_root, sub_view)
+            mkdirs(dst_root)
+            run_detection(os.path.join(im_root, sub_view), dst_root, conf_threshold)
