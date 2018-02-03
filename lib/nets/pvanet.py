@@ -2,7 +2,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
-from network import Network
+from .network import Network
 from nets import net_utils
 from model.config import cfg
 

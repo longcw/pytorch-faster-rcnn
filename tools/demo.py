@@ -223,16 +223,16 @@ if __name__ == '__main__':
 
     def run_detection(im_root, result_root, conf_threshold):
         print('detection in {}'.format(im_root))
+
         im_names = sorted(os.listdir(im_root))
-        # im_names = sorted(os.listdir(im_root))[520:527]
+
         for i, im_name in enumerate(im_names):
             im_file = os.path.join(im_root, im_name)
             print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-            print('Demo for data/demo/{}'.format(im_name))
+            print('run detection for {}'.format(im_file))
             im, dets = demo(net, im_file, conf_threshold)
             dets = dets[dets[:, 4] > conf_threshold]
 
-            # cv2.imwrite(os.path.join('/extra/Syncs/Walmart/results', im_name), im)
             with open(os.path.join(result_root, '{:04d}.txt'.format(i)), 'w') as f:
                 f.write('{}\n'.format(len(dets)))
                 for det in dets:
@@ -241,29 +241,41 @@ if __name__ == '__main__':
                     h = y2 - y1
                     f.write('0 {} {} {} {} {}\n'.format(s, w, h, x1, y1))
 
+            # MOT format
+            # with open(os.path.join(result_root, '{}.txt'.format(seq_name)), 'a') as f:
+            #     for det in dets:
+            #         x1, y1, x2, y2, s = det
+            #         w = x2 - x1
+            #         h = y2 - y1
+            #         frame = i + 1
+            #
+            #         f.write('{},-1,{},{},{},{},{},-1,-1,-1\n'.format(frame, x1, y1, w, h, s))
+
             cv2.imshow('test', im)
             cv2.waitKey(1)
-        #
-        # im_names = sorted(os.listdir(im_root))
-        # with open('/data/2DMOT2015/demo/Demo2/det.txt', 'w') as f:
-        #     for i, im_name in enumerate(im_names):
-        #         im_file = os.path.join(im_root, im_name)
-        #         print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-        #         print('Demo for data/demo/{}'.format(im_name))
-        #         dets = demo(net, im_file)
-        #         dets = dets[dets[:, 4] > 0.5]
-        #
-        #         frame = i + 1
-        #         for det in dets:
-        #             f.write('{},-1,{},{},{},{},{},-1,-1,-1\n'.format(frame, det[0], det[1], det[2], det[3], det[4]))
-        #
 
-    im_root = '/home/longc/PycharmProjects/mcmtt/data/PETS2009.S2.L1/'
-    result_root = '/home/longc/PycharmProjects/mcmtt/data/PETS2009.S2.L1/faster_rcnn_detection/'
     conf_threshold = 0.7
 
+    im_root = '/data/MCMTT/EPFL/Terrace/'
+    result_root = os.path.join(im_root, 'faster_rcnn_detection')
     for sub_view in os.listdir(im_root):
         if sub_view.startswith('View_'):
             dst_root = os.path.join(result_root, sub_view)
             mkdirs(dst_root)
             run_detection(os.path.join(im_root, sub_view), dst_root, conf_threshold)
+
+    # im_root = '/data/KITTI/training/image_02'
+    # result_root = '/data/KITTI/training/faster_rcnn_dets_02'
+    # for seq_name in os.listdir(im_root):
+    #     dst_root = os.path.join(result_root, seq_name)
+    #     mkdirs(dst_root)
+    #     run_detection(os.path.join(im_root, seq_name), dst_root, conf_threshold)
+
+    # im_root = '/data/MOT16/train'
+    # result_root = '/data/MOT16/faster_rcnn_dets'
+    # for seq_name in os.listdir(im_root):
+    #     if seq_name != 'PETS09-S2L1':
+    #         continue
+    #     dst_root = result_root
+    #     mkdirs(dst_root)
+    #     run_detection(os.path.join(im_root, seq_name, 'img1'), dst_root, conf_threshold)
